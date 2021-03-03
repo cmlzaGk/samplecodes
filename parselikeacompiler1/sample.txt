@@ -1,0 +1,62 @@
+#188: Pot Limit Omaha - 1/2
+2021-02-28 17:54:45
+Table 'Test Poker' Seat 4 is the button
+Seat 3: foo (100)
+Seat 4: Mr Foo (120)
+Seat 6: bar (115)
+Seat 7: foobar (122)
+bar: posts the small blind 1
+foobar: posts the big blind 2
+*** HOLE CARDS ***
+Dealt to foo: [9h 7h Ac 8d]
+Dealt to Mr Foo: [X X X X]
+Dealt to bar: [X X X X]
+Dealt to foobar: [X X X X]
+foo folds
+Mr Foo raises to 6
+bar folds
+foobar calls 6
+*** FLOP *** [8h 5h Jh]
+foobar checks
+Mr Foo bets 12
+foobar calls 12
+*** TURN *** [8h 5h Jh] [9d]
+foobar checks
+Mr Foo checks
+*** RIVER *** [8h 5h Jh 9d] [9c]
+foobar bets 24
+Mr Foo calls 24
+foobar shows [9h 9s Ac 6d]
+Mr Foo shows [As 6h 7h Qs]
+*** SUMMARY ***
+Seat 3: foo (100)
+Seat 4: Mr Foo (78) -42
+Seat 6: bar (114) -1
+Seat 7: foobar (165) +43
+foobar wins pot (85)
+
+#189: Pot Limit Omaha - 1/2
+2021-02-28 17:60:30
+Table 'Test Poker' Seat 4 is the button
+Seat 3: foo (100)
+Seat 4: Mr Foo (120)
+Seat 6: bar (115)
+Seat 7: foobar (122)
+bar: posts the small blind 1
+foobar: posts the big blind 2
+*** HOLE CARDS ***
+Dealt to foo: [9h 7h Ac 8d]
+Dealt to Mr Foo: [X X X X]
+Dealt to bar: [X X X X]
+Dealt to foobar: [X X X X]
+foo folds
+Mr Foo raises to 6
+bar folds
+foobar folds
+*** SUMMARY ***
+Seat 3: foo (100)
+Seat 4: Mr Foo (123) +3
+Seat 6: bar (114) -1
+Seat 7: foobar (120) -2
+foobar wins pot (6)
+
