@@ -103,3 +103,11 @@ class FirstFollowSet:
         dictkey = FirstFollowSet._compatible_key_type(k)
 
         return self.data.get(dictkey, set())
+
+    def __str__(self):
+        d = []
+        for k in self.data:
+            k_str = ','.join([str(x) for x in k])
+            v_str = ','.join([str(x) for x in self.data[k]])
+            d.append(f'[{k_str}] => [{v_str}]')
+        return ', '.join(d)

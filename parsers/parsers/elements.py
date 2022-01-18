@@ -17,6 +17,9 @@ class NonTerminal(GrammarToken):
     '''
     symbol: str
 
+    def __str__(self):
+        return self.symbol
+
 @dataclass(frozen=True)
 class GrammarTerminal(GrammarToken):
     '''
@@ -31,20 +34,36 @@ class GrammarTerminal(GrammarToken):
     symbol: str
     val: object = field(compare=False)
 
+    def __str__(self):
+        return self.symbol
+
 class Start(NonTerminal): # pylint: disable=too-few-public-methods
     '''
         The Start class
     '''
 
+@dataclass(frozen=True)
 class Epsilon(GrammarToken): # pylint: disable=too-few-public-methods
     '''
         The Epsilon
     '''
+    symbol: str
 
+    def __str__(self):
+        return self.symbol
+
+@dataclass(frozen=True)
 class Eof(GrammarToken): # pylint: disable=too-few-public-methods
     '''
-        The Eof
+        The Eof.
+        Eof's symbol is only for logging
+        so Eof(None) == Eof('anything') is True
     '''
+
+    symbol: str = field(compare=False)
+
+    def __str__(self):
+        return '$'
 
 @dataclass
 class Alternate:
@@ -69,3 +88,14 @@ class Rule:
     '''
     alts : list[Alternate]
     ident: NonTerminal
+
+@dataclass
+class Grammar:
+    '''
+        Grammer DataClass
+    '''
+    terminals: set[GrammarTerminal]
+    data: dict[NonTerminal, Rule]
+    start: NonTerminal
+    endmarker: Eof
+    epsilon: NonTerminal

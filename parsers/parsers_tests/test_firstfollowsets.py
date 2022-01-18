@@ -71,7 +71,7 @@ class TestFirstFollow(unittest.TestCase):
         f = FirstFollowSet()
         t = GrammarTerminal('a', 10)
         # GrammarTerminal second argument is not used for equality comparisons
-        v_add = [GrammarTerminal('x', 10), NonTerminal('y'), Eof()]
+        v_add = [GrammarTerminal('x', 10), NonTerminal('y'), Eof('4')]
         v_remove = [GrammarTerminal('x', 15), NonTerminal('p')]
         f.add(t, v_add)
         self.assertEqual(f.get(t), set(v_add))
@@ -103,7 +103,7 @@ class TestFirstFollow(unittest.TestCase):
         f = FirstFollowSet()
 
         t1 = [NonTerminal('a'), GrammarTerminal('b', 7)]
-        v1 = [NonTerminal('k'), Epsilon(), Eof()]
+        v1 = [NonTerminal('k'), Epsilon('e'), Eof(None)]
         f.add(t1, v1)
         self.assertEqual(f.get(t1), set(v1))
         self.assertEqual(f.get(tuple(t1)), set(v1))
