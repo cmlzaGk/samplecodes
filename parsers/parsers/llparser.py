@@ -38,34 +38,30 @@ class LLParser:
         stack.push(self._grammar.start)
         e = tokens.next()
         while e != None and len(stack) != 0:
-            if isinstance(stack.peek(), GrammarTerminal):
-                if stack.peek().symbol == e.value:
+            match stack.peek():
+                case GrammarTerminal(symbol, _) if symbol == e.value:
                     stack.pop()
                     e = tokens.next()
-                else:
-                    raise Exception(f'Unable to parse e={e}, stack={stack}')
-
-            elif isinstance(stack.peek(), Epsilon):
-                stack.pop()
-            elif isinstance(stack.peek(), NonTerminal):
-                if e.tokentype == TokenType.EOF:
-                    eterminal = self._grammar.endmarker
-                else:
-                    eterminal = GrammarTerminal(e.value, e.value)
-                if (stack.peek(), eterminal) in self._parser_table:
-                    nt = stack.pop()
-                    production_rule = self._parser_table[(nt, eterminal)][0].data
-                    for x in reversed(production_rule):
-                        stack.push(x)
-                else:
-                    raise Exception(f'Unable to parse e={e}, stack={stack}')
-
-            elif isinstance(stack.peek(), Eof):
-                if e.tokentype == TokenType.EOF:
+                case Epsilon():
+                    stack.pop()
+                case NonTerminal():
+                    if e.tokentype == TokenType.EOF:
+                        eterminal = self._grammar.endmarker
+                    else:
+                        eterminal = GrammarTerminal(e.value, e.value)
+                    if (stack.peek(), eterminal) in self._parser_table:
+                        nt = stack.pop()
+                        production_rule = self._parser_table[(nt, eterminal)][0].data
+                        for x in reversed(production_rule):
+                            stack.push(x)
+                    else:
+                        raise Exception(f'Unable to parse e={e}, stack={stack}')
+                case Eof() if e.tokentype == TokenType.EOF:
                     stack.pop()
                     e = tokens.next()
-            else:
+                case _:
                     raise Exception(f'Unable to parse e={e}, stack={stack}')
+
         if e == None and len(stack) == 0:
             return
 
