@@ -7,6 +7,7 @@ from typing import Iterable, Iterator
 
 from .peeker import Peeker
 
+
 SHOULD_NOT_BE_IN_WORD = ["'", '"']
 
 class TokenizerException(Exception):
@@ -85,3 +86,4 @@ def tokenizer(iterable: Iterable[str]) -> Iterator[Token]:
         else:
             raise TokenizerException(f'We messed up {word}')
     yield Token(tokentype=TokenType.EOF, value=None)
+

@@ -1,5 +1,6 @@
+from lib2to3.pgen2 import token
 import unittest
-from parsers import GrammarTerminal, Start, NonTerminal, Rule, Alternate, Eof
+from parsers import tokenizer, GrammarTerminal, Start, NonTerminal, Rule, Alternate, Eof
 from parsers.elements import Epsilon, Grammar
 from parsers.llparser import LLParser
 
@@ -273,3 +274,59 @@ class TestLLParser(unittest.TestCase):
         llparser = LLParser(grammar)
         p = llparser._parser_table
         self.assertEqual(len(p[(NonTerminal('A'), GrammarTerminal('a','a'))]), 2)
+
+    def test_basic_derivation(self):
+        '''
+            Test derivation for
+            S => F | ( S + F )
+            F => a
+        '''
+        language = '''
+            S : F
+            S : ( S + F )
+            F : a
+        '''
+        grammar = TestLLParser.create_grammar(language_buf=language,
+                                            epsilon='e')
+        llparser = LLParser(grammar)
+        llparser.parse(list(tokenizer(iter('( a + a )'))))
+        llparser.parse(list(tokenizer(iter('( ( a +  a ) + a )'))))
+        #TODO : Test using ASTs
+        self.assertEqual(1, 1)
+
+    def test_basic_derivation_with_epslion(self):
+        '''
+            Test derivation for
+            S -> b E | E
+            E -> a | ε
+        '''
+        language = '''
+        S : b E
+        S : E
+        E : a
+        E : e
+        '''
+        grammar = TestLLParser.create_grammar(language_buf=language,
+                                            epsilon='e')
+        llparser = LLParser(grammar)
+        llparser.parse(list(tokenizer(iter('b'))))
+        self.assertEqual(1, 1)
+
+    def test_dangingling_else(self):
+        '''
+            S -> iEtSS'| a
+            S' -> eS | epsilon
+            E -> b
+        '''
+        language = '''
+        Statement : if E then Statement EStatement
+        Statement : a
+        EStatement : else Statement
+        EStatement : e
+        E : b
+        '''
+        grammar = TestLLParser.create_grammar(language_buf=language,
+                                            epsilon='e')
+        llparser = LLParser(grammar)
+        p = llparser._parser_table
+        self.assertEqual(len(p[(NonTerminal('EStatement'), GrammarTerminal('else','else'))]), 2)

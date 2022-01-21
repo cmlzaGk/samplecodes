@@ -2,10 +2,23 @@
     Module llparser contains the llparser class
 '''
 
-from .elements import Grammar, GrammarTerminal, NonTerminal, Epsilon
+from .elements import Eof, Grammar, GrammarTerminal, NonTerminal, Epsilon
 from .ll_ff import FirstFollowSet
-from .tokenizer import tokenizer
+from .stack import Stack
+from .tokenizer import TokenType, Token
 
+class TokenReader:
+    def __init__(self, tokenlist:list[Token]):
+        self._itr = iter(tokenlist)
+
+    def next(self):
+        try:
+            n = next(self._itr)
+            if n.tokentype == TokenType.SPACE:
+                return self.next()
+            return n
+        except StopIteration:
+            return None
 
 class LLParser:
     '''
@@ -15,6 +28,49 @@ class LLParser:
     def __init__(self, grammar: Grammar):
         self._grammar = grammar
         self._parser_table = LLParser.create_parser_table(grammar)
+
+    def parse(self, tokenlist: list[Token]):
+
+        stack = Stack()
+        tokens = TokenReader(tokenlist)
+
+        stack.push(self._grammar.endmarker)
+        stack.push(self._grammar.start)
+        e = tokens.next()
+        while e != None and len(stack) != 0:
+            if isinstance(stack.peek(), GrammarTerminal):
+                if stack.peek().symbol == e.value:
+                    stack.pop()
+                    e = tokens.next()
+                else:
+                    raise Exception(f'Unable to parse e={e}, stack={stack}')
+
+            elif isinstance(stack.peek(), Epsilon):
+                stack.pop()
+            elif isinstance(stack.peek(), NonTerminal):
+                if e.tokentype == TokenType.EOF:
+                    eterminal = self._grammar.endmarker
+                else:
+                    eterminal = GrammarTerminal(e.value, e.value)
+                if (stack.peek(), eterminal) in self._parser_table:
+                    nt = stack.pop()
+                    production_rule = self._parser_table[(nt, eterminal)][0].data
+                    for x in reversed(production_rule):
+                        stack.push(x)
+                else:
+                    raise Exception(f'Unable to parse e={e}, stack={stack}')
+
+            elif isinstance(stack.peek(), Eof):
+                if e.tokentype == TokenType.EOF:
+                    stack.pop()
+                    e = tokens.next()
+            else:
+                    raise Exception(f'Unable to parse e={e}, stack={stack}')
+        if e == None and len(stack) == 0:
+            return
+
+        # this is likely unreachable. Test the conditions
+        raise Exception(f'Potentially Unreachable to parse e={e}, stack={stack}')
 
     @staticmethod
     def create_parser_table(grammar: Grammar):
