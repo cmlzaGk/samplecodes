@@ -3,12 +3,13 @@ Tokenizer module performs lexical analysis for parsers in this library
 '''
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Iterable, Iterator
+from optparse import Option
+from typing import Iterator, Optional
 
 from .peeker import Peeker
 
 
-SHOULD_NOT_BE_IN_WORD = ["'", '"']
+SHOULD_NOT_BE_IN_WORD : list[str] = ["'", '"']
 
 class TokenizerException(Exception):
     '''
@@ -39,34 +40,35 @@ class Token:
     value: object
 
 # return an iterator of words
-def words(iterable: Iterable[str]) -> Iterator[str]:
+def words(iterable: Iterator[str]) -> Iterator[str]:
     '''
         Generator class to provide a list of words
-        The difference between split() and words() is that words() generates a different
-        item for each space character in the iterator
+        The difference between split() and words() is that words() generates a
+        different item for each space character in the iterator
     '''
     peeker = Peeker(iterable)
-    word = []
     # peeker.peek() is idempotent and peeker.next() resets peeker.peek()
     while peeker.peek():
         # generate spaces one by one
-        while peeker.peek().isspace():
-            yield peeker.next()
+        # static type checker gets confused here that we are not checking -
+        # - None values
+        while peeker.peek() and peeker.peek().isspace(): # type: ignore
+            yield peeker.next() # type: ignore
         #generate a word
-        word = ''
-        while peeker.peek() and not peeker.peek().isspace():
-            word += peeker.next()
+        word : str = ''
+        while peeker.peek() and not peeker.peek().isspace(): # type: ignore
+            word += peeker.next() # type: ignore
         if word:
             yield word
 
 def _valid_word(word:str) -> bool:
     return not any(x in word for x in SHOULD_NOT_BE_IN_WORD)
 
-def tokenizer(iterable: Iterable[str]) -> Iterator[Token]:
+def tokenizer(iterator: Iterator[str]) -> Iterator[Token]:
     '''
         Geneator function returns tokens from an iterator of strs
     '''
-    for word in words(iterable):
+    for word in words(iterator):
         if word.isnumeric():
             yield Token(tokentype=TokenType.INT, value=int(word))
         elif word[0] == "'" \
@@ -86,4 +88,3 @@ def tokenizer(iterable: Iterable[str]) -> Iterator[Token]:
         else:
             raise TokenizerException(f'We messed up {word}')
     yield Token(tokentype=TokenType.EOF, value=None)
-

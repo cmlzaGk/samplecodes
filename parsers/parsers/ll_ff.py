@@ -4,7 +4,7 @@
 '''
 
 from dataclasses import dataclass, field
-from .elements import GrammarTerminal, GrammarToken
+from .elements import GrammarToken
 
 @dataclass
 class FirstFollowSet:
@@ -41,9 +41,9 @@ class FirstFollowSet:
 
         if isinstance(token_s, set):
             return token_s
-        elif isinstance(token_s, list):
+        if isinstance(token_s, list):
             return set(token_s)
-        elif isinstance(token_s, GrammarToken):
+        if isinstance(token_s, GrammarToken):
             return set([token_s])
         raise Exception (f'Unknown type {type(token_s)} for {token_s}')
 
@@ -101,9 +101,9 @@ class FirstFollowSet:
         return self.data.get(dictkey, set())
 
     def __str__(self):
-        d = []
-        for k in self.data:
+        combined_str = []
+        for k,val in self.data.items():
             k_str = ','.join([str(x) for x in k])
-            v_str = ','.join([str(x) for x in self.data[k]])
-            d.append(f'[{k_str}] => [{v_str}]')
-        return ', '.join(d)
+            v_str = ','.join([str(x) for x in val])
+            combined_str.append(f'[{k_str}] => [{v_str}]')
+        return ', '.join(combined_str)

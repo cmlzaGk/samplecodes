@@ -6,13 +6,13 @@ from dataclasses import dataclass, field
 from abc import ABC
 
 @dataclass(frozen=True)
-class GrammarToken(ABC): # pylint: disable=too-few-public-methods
+class GrammarToken(ABC):
     '''
         Base class for Grammar tokens.
     '''
     symbol: str
 
-class NonTerminal(GrammarToken):
+class NonTerminal(GrammarToken): # pylint: disable=too-few-public-methods
     '''
         The nonterminal
     '''
@@ -30,6 +30,7 @@ class GrammarTerminal(GrammarToken):
         set([GrammarTerminal(sym='int', val=5),
              GrammarTerminal(sym='int', val=6)])
     '''
+    # TODO : Should this be Token
     val: object = field(compare=False)
 
     def __str__(self) -> str:
