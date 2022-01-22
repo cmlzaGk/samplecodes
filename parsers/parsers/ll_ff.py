@@ -4,7 +4,7 @@
 '''
 
 from dataclasses import dataclass, field
-from .elements import GrammarToken
+from .elements import GrammarTerminal, GrammarToken
 
 @dataclass
 class FirstFollowSet:
@@ -28,28 +28,24 @@ class FirstFollowSet:
     @staticmethod
     def _compatible_key_type(k):
 
-        match k:
-            case tuple():
-                return k
-            case [*_]:
-                return tuple(k)
-            case GrammarToken():
-                return tuple([k])
-            case _:
-                raise Exception (f'Unknown type {type(k)} for {k}')
+        if isinstance(k, tuple):
+            return k
+        if isinstance(k, list):
+            return tuple(k)
+        if isinstance(k, GrammarToken):
+            return tuple([k])
+        raise Exception (f'Unknown type {type(k)} for {k}')
 
     @staticmethod
     def _compatible_value_type(token_s):
 
-        match token_s:
-            case set():
-                return token_s
-            case [*_]:
-                return set(token_s)
-            case GrammarToken():
-                return set([token_s])
-            case _:
-                raise Exception (f'Unknown type {type(token_s)} for {token_s}')
+        if isinstance(token_s, set):
+            return token_s
+        elif isinstance(token_s, list):
+            return set(token_s)
+        elif isinstance(token_s, GrammarToken):
+            return set([token_s])
+        raise Exception (f'Unknown type {type(token_s)} for {token_s}')
 
     def add(self, key, token_s):
         '''

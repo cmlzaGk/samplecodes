@@ -2,7 +2,7 @@
     Module llparser contains the llparser class
 '''
 
-from .elements import Eof, Grammar, GrammarTerminal, NonTerminal, Epsilon
+from .elements import Eof, Grammar, GrammarTerminal, GrammarToken, NonTerminal, Epsilon
 from .ll_ff import FirstFollowSet
 from .stack import Stack
 from .tokenizer import TokenType, Token
@@ -37,30 +37,32 @@ class LLParser:
         stack.push(self._grammar.endmarker)
         stack.push(self._grammar.start)
         e = tokens.next()
+        eterminal: GrammarToken = None
         while e != None and len(stack) != 0:
-            match stack.peek():
-                case GrammarTerminal(symbol, _) if symbol == e.value:
-                    stack.pop()
-                    e = tokens.next()
-                case Epsilon():
-                    stack.pop()
-                case NonTerminal():
-                    if e.tokentype == TokenType.EOF:
-                        eterminal = self._grammar.endmarker
-                    else:
-                        eterminal = GrammarTerminal(e.value, e.value)
-                    if (stack.peek(), eterminal) in self._parser_table:
-                        nt = stack.pop()
-                        production_rule = self._parser_table[(nt, eterminal)][0].data
-                        for x in reversed(production_rule):
-                            stack.push(x)
-                    else:
-                        raise Exception(f'Unable to parse e={e}, stack={stack}')
-                case Eof() if e.tokentype == TokenType.EOF:
-                    stack.pop()
-                    e = tokens.next()
-                case _:
-                    raise Exception(f'Unable to parse e={e}, stack={stack}')
+
+            if e.tokentype == TokenType.EOF:
+                eterminal = self._grammar.endmarker
+            else:
+                eterminal = GrammarTerminal(e.value, e.value)
+
+            if isinstance(stack.peek(), GrammarTerminal) and \
+                    stack.peek().symbol == e.value:
+                stack.pop()
+                e = tokens.next()
+            elif isinstance(stack.peek(), Epsilon):
+                stack.pop()
+            elif isinstance(stack.peek(), NonTerminal) and \
+                    (stack.peek(), eterminal) in self._parser_table:
+                nt = stack.pop()
+                production_rule = self._parser_table[(nt, eterminal)][0].data
+                for x in reversed(production_rule):
+                    stack.push(x)
+            elif isinstance(stack.peek(), Eof) and \
+                    e.tokentype == TokenType.EOF:
+                stack.pop()
+                e = tokens.next()
+            else:
+                raise Exception(f'Unable to parse e={e}, stack={stack}')
 
         if e == None and len(stack) == 0:
             return
@@ -110,8 +112,9 @@ class LLParser:
 
             Fi, Fo = First, Follow sets
 
-            Fi(W) is a set of terminals that are the first terminals of all
-            derivations of W where W is made up of NonTerminal and Terminals.
+            Fi(w), as the set of terminals that can be found at the start of
+            some string in w, plus ε if the empty string also belongs to w.
+
             Fo(A) is a set of terminals {a} such that a string w'Aaw'' can be
             derived from S as the start symbol.
 
@@ -171,27 +174,24 @@ class LLParser:
 
         iteration_keys = list(firsts.data.keys())
         for word in iteration_keys:
-            match word:
-                case [GrammarTerminal() as a, *_]:
-                    firsts.add(word, [a])
+            if len(word) == 0:
+                continue
+            A = word[0]
 
-                case [NonTerminal() as A, *_] if \
-                        grammar.epsilon not in firsts.get([A]):
+            if isinstance(A, GrammarTerminal):
+                firsts.add(word, [A])
+            elif isinstance(A, NonTerminal):
+                if grammar.epsilon not in firsts.get([A]):
                     firsts.add(word, firsts.get([A]))
-
-                case [NonTerminal() as A, *rest]:
+                else:
+                    rest = word[1:]
                     AminusE = firsts.get(A) - set([grammar.epsilon])
                     firsts.add(word, AminusE)
                     firsts.add(word, firsts.get(rest))
-
-                case [Epsilon() as e]:
-                    firsts.add(word, set([e]))
-
-                case []:
-                    pass
-
-                case _:
-                    raise Exception('Unexpected')
+            elif isinstance(A, Epsilon) and len(word) == 1:
+                firsts.add(word, set([A]))
+            else:
+                raise Exception('Unexpected')
 
         for nonterminal in grammar.data:
             for rule in grammar.data[nonterminal].alts:

@@ -5,19 +5,18 @@ class definitions for elements of a context free grammar
 from dataclasses import dataclass, field
 from abc import ABC
 
+@dataclass(frozen=True)
 class GrammarToken(ABC): # pylint: disable=too-few-public-methods
     '''
-        Empty Class
+        Base class for Grammar tokens.
     '''
+    symbol: str
 
-@dataclass(frozen=True)
 class NonTerminal(GrammarToken):
     '''
         The nonterminal
     '''
-    symbol: str
-
-    def __str__(self):
+    def __str__(self) -> str:
         return self.symbol
 
 @dataclass(frozen=True)
@@ -31,12 +30,12 @@ class GrammarTerminal(GrammarToken):
         set([GrammarTerminal(sym='int', val=5),
              GrammarTerminal(sym='int', val=6)])
     '''
-    symbol: str
     val: object = field(compare=False)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.symbol
 
+@dataclass(frozen=True)
 class Start(NonTerminal): # pylint: disable=too-few-public-methods
     '''
         The Start class
@@ -47,9 +46,7 @@ class Epsilon(GrammarToken): # pylint: disable=too-few-public-methods
     '''
         The Epsilon
     '''
-    symbol: str
-
-    def __str__(self):
+    def __str__(self) -> str:
         return self.symbol
 
 @dataclass(frozen=True)
@@ -62,7 +59,7 @@ class Eof(GrammarToken): # pylint: disable=too-few-public-methods
 
     symbol: str = field(compare=False)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '$'
 
 @dataclass
@@ -74,7 +71,7 @@ class Alternate:
     '''
     data : list[GrammarToken]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ''.join([t.symbol for t in self.data])
 
 
