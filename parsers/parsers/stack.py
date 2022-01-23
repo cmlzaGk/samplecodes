@@ -1,14 +1,29 @@
+'''
+    Module Stack contains generic Stack
+'''
 class Stack:
+    '''
+        Class stack
+    '''
     def __init__(self):
         self._data = []
 
     def push(self, element):
+        '''
+            push
+        '''
         self._data.append(element)
 
     def pop(self):
+        '''
+            pop
+        '''
         return self._data.pop()
 
     def peek(self):
+        '''
+            peek
+        '''
         return self._data[-1]
 
     def __len__(self):

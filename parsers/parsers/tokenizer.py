@@ -3,8 +3,7 @@ Tokenizer module performs lexical analysis for parsers in this library
 '''
 from dataclasses import dataclass
 from enum import Enum, auto
-from optparse import Option
-from typing import Iterator, Optional
+from typing import Iterator
 
 from .peeker import Peeker
 

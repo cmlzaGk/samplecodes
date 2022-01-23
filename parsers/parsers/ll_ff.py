@@ -6,6 +6,13 @@
 from dataclasses import dataclass, field
 from .elements import GrammarToken
 
+# Type Variables
+FirstFollowKeyType = tuple[GrammarToken, ...]
+FirstFollowValueType = set[GrammarToken]
+
+compatiblekeys = FirstFollowKeyType | list[GrammarToken] | GrammarToken
+compatiblevalues = FirstFollowValueType | list[GrammarToken] | GrammarToken
+
 @dataclass
 class FirstFollowSet:
     '''
@@ -22,11 +29,12 @@ class FirstFollowSet:
         FirstFollowSet is basically a data-structure to mantain a word -> set(Tokens) data
         The only additional functionality is provided by a dirty check for any set operation
     '''
-    data : dict = field(default_factory=dict)
-    dirty: bool = False
+    data : dict[FirstFollowKeyType, FirstFollowValueType] = field(default_factory=dict,
+                                                            init=False)
+    dirty: bool = field(default=False, init=False)
 
     @staticmethod
-    def _compatible_key_type(k):
+    def _compatible_key_type(k: compatiblekeys) -> FirstFollowKeyType:
 
         if isinstance(k, tuple):
             return k
@@ -37,7 +45,7 @@ class FirstFollowSet:
         raise Exception (f'Unknown type {type(k)} for {k}')
 
     @staticmethod
-    def _compatible_value_type(token_s):
+    def _compatible_value_type(token_s: compatiblevalues) -> FirstFollowValueType:
 
         if isinstance(token_s, set):
             return token_s
@@ -47,7 +55,7 @@ class FirstFollowSet:
             return set([token_s])
         raise Exception (f'Unknown type {type(token_s)} for {token_s}')
 
-    def add(self, key, token_s):
+    def add(self, key: compatiblekeys, token_s: compatiblevalues):
         '''
             add set of tokens in token_s to the set in dict[key]
             update dirty if the dict[key] was modified
@@ -62,7 +70,7 @@ class FirstFollowSet:
 
         self.dirty = self.dirty or (old != self.data[key])
 
-    def add_empty(self, k):
+    def add_empty(self, k: compatiblekeys):
         '''
             create an empty set in dict[key] if not present
             update dirty if the dict[k] was modified
@@ -76,7 +84,7 @@ class FirstFollowSet:
 
         self.dirty = self.dirty or (old != self.data[dictkey])
 
-    def remove(self, k, removeset):
+    def remove(self, k: compatiblekeys, removeset: compatiblevalues):
         '''
             remove set of tokens in token_s from the set in dict[key]
             update dirty if the dict[key] was modified
@@ -92,7 +100,7 @@ class FirstFollowSet:
 
         self.dirty = self.dirty or (old != self.data[dictkey])
 
-    def get(self, k):
+    def get(self, k: compatiblekeys):
         '''
             return self.data[k]
         '''

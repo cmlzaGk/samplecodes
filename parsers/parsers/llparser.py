@@ -2,21 +2,33 @@
     Module llparser contains the llparser class
 '''
 
-from .elements import Eof, Grammar, GrammarTerminal, GrammarToken, NonTerminal, Epsilon
+from typing import Optional
+
+from .elements import Alternate, Eof, Grammar, GrammarTerminal, GrammarToken, NonTerminal, Epsilon
 from .ll_ff import FirstFollowSet
 from .stack import Stack
 from .tokenizer import TokenType, Token
 
-class TokenReader:
-    def __init__(self, tokenlist:list[Token]):
+ParserStackElement = NonTerminal|Epsilon|Eof
+ParserTableType =  dict[tuple[ParserStackElement, GrammarToken], list[Alternate]]
+
+class TokenReader: # pylint: disable=too-few-public-methods
+    '''
+        TokenReader class wraps an iterator
+    '''
+    def __init__(self, tokenlist: list[Token]):
         self._itr = iter(tokenlist)
 
-    def next(self):
+    def nexttoken(self) -> Optional[Token]:
+        '''
+            retrieve next value from _itr or None for end
+            gobbles up spaces
+        '''
         try:
-            n = next(self._itr)
-            if n.tokentype == TokenType.SPACE:
-                return self.next()
-            return n
+            nextelem = next(self._itr)
+            if nextelem.tokentype == TokenType.SPACE:
+                return self.nexttoken()
+            return nextelem
         except StopIteration:
             return None
 
@@ -30,48 +42,53 @@ class LLParser:
         self._parser_table = LLParser.create_parser_table(grammar)
 
     def parse(self, tokenlist: list[Token]):
+        '''
+            parses a stream of tokens using LL(1)
+        '''
 
         stack = Stack()
         tokens = TokenReader(tokenlist)
 
         stack.push(self._grammar.endmarker)
         stack.push(self._grammar.start)
-        e = tokens.next()
-        eterminal: GrammarToken = None
-        while e != None and len(stack) != 0:
+        e = tokens.nexttoken() # pylint: disable=invalid-name
 
-            if e.tokentype == TokenType.EOF:
+        # the static typechecker is unable to catch e != none here
+        # so we have to ignore some type errors below
+        while e is not None and len(stack) != 0:
+            eterminal: GrammarToken
+            if e.tokentype == TokenType.EOF: # type: ignore
                 eterminal = self._grammar.endmarker
             else:
-                eterminal = GrammarTerminal(e.value, e.value)
+                eterminal = GrammarTerminal(e.value, e.value) # type: ignore
 
             if isinstance(stack.peek(), GrammarTerminal) and \
-                    stack.peek().symbol == e.value:
+                    stack.peek().symbol == e.value: # type: ignore
                 stack.pop()
-                e = tokens.next()
+                e = tokens.nexttoken() # pylint: disable=invalid-name
             elif isinstance(stack.peek(), Epsilon):
                 stack.pop()
             elif isinstance(stack.peek(), NonTerminal) and \
                     (stack.peek(), eterminal) in self._parser_table:
-                nt = stack.pop()
-                production_rule = self._parser_table[(nt, eterminal)][0].data
-                for x in reversed(production_rule):
+                nonterminal = stack.pop()
+                production_rule = self._parser_table[(nonterminal, eterminal)][0].data
+                for x in reversed(production_rule): # pylint: disable=invalid-name
                     stack.push(x)
             elif isinstance(stack.peek(), Eof) and \
-                    e.tokentype == TokenType.EOF:
+                    e.tokentype == TokenType.EOF: # type: ignore
                 stack.pop()
-                e = tokens.next()
+                e = tokens.nexttoken() # pylint: disable=invalid-name
             else:
                 raise Exception(f'Unable to parse e={e}, stack={stack}')
 
-        if e == None and len(stack) == 0:
+        if e is None and len(stack) == 0:
             return
 
         # this is likely unreachable. Test the conditions
         raise Exception(f'Potentially Unreachable to parse e={e}, stack={stack}')
 
     @staticmethod
-    def create_parser_table(grammar: Grammar):
+    def create_parser_table(grammar: Grammar) -> ParserTableType:
         '''
             LL(1) parser table is created as follows:
             T[A,a] contains the rule A → w if and only if
@@ -81,7 +98,7 @@ class LLParser:
         '''
         firsts , follows = LLParser.create_ll_firsts_follows(grammar)
 
-        parser_table = {}
+        parser_table : ParserTableType = {}
         for nonterminal in grammar.data:
             for alt in grammar.data[nonterminal].alts:
                 for terminal in grammar.terminals.union([grammar.endmarker]):
@@ -97,7 +114,7 @@ class LLParser:
         return parser_table
 
     @staticmethod
-    def create_ll_firsts_follows(grammar:Grammar):
+    def create_ll_firsts_follows(grammar:Grammar) -> tuple[FirstFollowSet, FirstFollowSet]:
 
         r'''
             Function that creates the firsts and follows.
@@ -165,7 +182,7 @@ class LLParser:
         return firsts, follows
 
     @staticmethod
-    def _firsts_loop(grammar: Grammar,
+    def _firsts_loop(grammar: Grammar, # pylint: disable=too-many-branches
                     firsts: FirstFollowSet,
                     follows: FirstFollowSet):
         '''
@@ -176,7 +193,7 @@ class LLParser:
         for word in iteration_keys:
             if len(word) == 0:
                 continue
-            A = word[0]
+            A = word[0] # pylint: disable=invalid-name
 
             if isinstance(A, GrammarTerminal):
                 firsts.add(word, [A])
@@ -185,7 +202,7 @@ class LLParser:
                     firsts.add(word, firsts.get([A]))
                 else:
                     rest = word[1:]
-                    AminusE = firsts.get(A) - set([grammar.epsilon])
+                    AminusE = firsts.get(A) - set([grammar.epsilon]) # pylint: disable=invalid-name
                     firsts.add(word, AminusE)
                     firsts.add(word, firsts.get(rest))
             elif isinstance(A, Epsilon) and len(word) == 1:
@@ -200,12 +217,12 @@ class LLParser:
 
         for nonterminal in grammar.data:
             for rule in grammar.data[nonterminal].alts:
-                for idx, t in enumerate(rule.data):
-                    if isinstance(t, NonTerminal):
+                for idx, grammartoken in enumerate(rule.data):
+                    if isinstance(grammartoken, NonTerminal):
                         firsts.add_empty(rule.data[idx+1:])
-                        follows.add(t, firsts.get(rule.data[idx+1:]))
+                        follows.add(grammartoken, firsts.get(rule.data[idx+1:]))
 
                         if grammar.epsilon in firsts.get(rule.data[idx+1:]):
-                            follows.add(t, follows.get(nonterminal))
+                            follows.add(grammartoken, follows.get(nonterminal))
                         if len(rule.data[idx+1:]) == 0:
-                            follows.add(t, follows.get(nonterminal))
+                            follows.add(grammartoken, follows.get(nonterminal))
