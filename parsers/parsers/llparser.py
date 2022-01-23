@@ -46,7 +46,7 @@ class LLParser:
             parses a stream of tokens using LL(1)
         '''
 
-        stack = Stack()
+        stack: Stack[GrammarToken] = Stack()
         tokens = TokenReader(tokenlist)
 
         stack.push(self._grammar.endmarker)
@@ -70,7 +70,7 @@ class LLParser:
                 stack.pop()
             elif isinstance(stack.peek(), NonTerminal) and \
                     (stack.peek(), eterminal) in self._parser_table:
-                nonterminal = stack.pop()
+                nonterminal: NonTerminal = stack.pop() # type: ignore
                 production_rule = self._parser_table[(nonterminal, eterminal)][0].data
                 for x in reversed(production_rule): # pylint: disable=invalid-name
                     stack.push(x)
