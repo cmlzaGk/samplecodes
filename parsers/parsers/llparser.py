@@ -39,7 +39,7 @@ class LLParser:
     '''
     def __init__(self, grammar: Grammar):
         self._grammar = grammar
-        self._parser_table = LLParser.create_parser_table(grammar)
+        self._setup_llparser()
 
     def parse(self, tokenlist: list[Token]):
         '''
@@ -87,8 +87,7 @@ class LLParser:
         # this is likely unreachable. Test the conditions
         raise Exception(f'Potentially Unreachable to parse e={e}, stack={stack}')
 
-    @staticmethod
-    def create_parser_table(grammar: Grammar) -> ParserTableType:
+    def _generate_parser_table(self) -> ParserTableType:
         '''
             LL(1) parser table is created as follows:
             T[A,a] contains the rule A → w if and only if
@@ -96,14 +95,14 @@ class LLParser:
                     ε is in Fi(w) and a is in Fo(A).
             (From: https://en.wikipedia.org/wiki/LL_parser)
         '''
-        firsts , follows = LLParser.create_ll_firsts_follows(grammar)
+        firsts , follows = self._firsts, self._follows
 
         parser_table : ParserTableType = {}
-        for nonterminal in grammar.data:
-            for alt in grammar.data[nonterminal].alts:
-                for terminal in grammar.terminals.union([grammar.endmarker]):
+        for nonterminal in self._grammar.data:
+            for alt in self._grammar.data[nonterminal].alts:
+                for terminal in self._grammar.terminals.union([self._grammar.endmarker]):
                     if terminal in firsts.get(alt.data) or \
-                        (grammar.epsilon in firsts.get(alt.data) \
+                        (self._grammar.epsilon in firsts.get(alt.data) \
                          and terminal in follows.get(nonterminal)):
 
 
@@ -113,12 +112,12 @@ class LLParser:
                             parser_table[(nonterminal,terminal)] = [alt]
         return parser_table
 
-    @staticmethod
-    def create_ll_firsts_follows(grammar:Grammar) -> tuple[FirstFollowSet, FirstFollowSet]:
+    def _setup_llparser(self):
 
         r'''
-            Function that creates the firsts and follows.
+            Function that creates the firsts,  follows and parsing table
             Is called by constructor.
+
 
             _create_firsts_follows initializes firsts and follows set,
                 and keeps applying update rules via _firsts_loop till there is
@@ -167,19 +166,20 @@ class LLParser:
 
         firsts, follows = FirstFollowSet(), FirstFollowSet()
 
-        for nonterminal in grammar.data:
+        for nonterminal in self._grammar.data:
             firsts.add_empty([nonterminal])
-            for rule in grammar.data[nonterminal].alts:
+            for rule in self._grammar.data[nonterminal].alts:
                 firsts.add_empty(rule.data)
 
-        follows.add(grammar.start, grammar.endmarker)
+        follows.add(self._grammar.start, self._grammar.endmarker)
 
         firsts.dirty, follows.dirty = True, True
         while firsts.dirty or follows.dirty:
             firsts.dirty, follows.dirty = False, False
-            LLParser._firsts_loop(grammar, firsts, follows)
+            LLParser._firsts_loop(self._grammar, firsts, follows)
 
-        return firsts, follows
+        self._firsts, self._follows = firsts, follows
+        self._parser_table = self._generate_parser_table()
 
     @staticmethod
     def _firsts_loop(grammar: Grammar, # pylint: disable=too-many-branches
