@@ -5,6 +5,10 @@ from parsers.elements import Epsilon, Grammar
 from parsers.llparser import LLParser
 
 class TestLLParser(unittest.TestCase):
+    '''
+        Helper site: http://jsmachines.sourceforge.net/machines/ll1.html
+
+    '''
     def parser_table_as_symbols(self, p):
         '''
             returns parser table as string symbols for languages without conflicts
@@ -46,17 +50,22 @@ class TestLLParser(unittest.TestCase):
 
         # TODO: do one pass for collecting terminals as well as
         # generating rules
-        terminals = {epsilon: Epsilon(epsilon)} if epsilon else {}
+        terminals = {}
 
         for p in parser_lines:
             _, rulestr = p.split(':')
             for token in rulestr.split():
-                if token not in nonterminals and token != start.symbol:
+                if token not in nonterminals and token != start.symbol and token != epsilon:
                     terminals[token] = terminals.get(token,
                                         GrammarTerminal(symbol=token,
                                                         val=token))
 
+
         symbol_db = { start.symbol:start }
+
+        if epsilon:
+            symbol_db[epsilon] =  Epsilon(epsilon)
+
         symbol_db.update(nonterminals)
         symbol_db.update(terminals)
 
@@ -82,7 +91,7 @@ class TestLLParser(unittest.TestCase):
                 data,
                 start,
                 Eof('$'),
-                terminals.get(epsilon)
+                symbol_db.get(epsilon)
         )
 
     def test_basic_without_parsing(self):
@@ -190,11 +199,9 @@ class TestLLParser(unittest.TestCase):
         llparser = LLParser(grammar)
         pr = self.parser_table_as_symbols(llparser._parser_table)
         self.assertDictEqual(pr, {('S', 'b'): 'bE',
-                                  ('S', 'e'): 'E',
                                   ('S', '$'): 'E',
                                   ('S', 'a'): 'E',
                                   ('E', 'a'): 'a',
-                                  ('E', 'e') : 'e',
                                   ('E', '$'): 'e'})
 
     def test_left_left_recursion(self):
@@ -251,7 +258,6 @@ class TestLLParser(unittest.TestCase):
                                   ('E', 'b'): 'TZ',
                                   ('E', 'c'): 'TZ',
                                   ('Z', '+'): '+a',
-                                  ('Z', 'e'): 'e',
                                   ('Z', '$'): 'e',
                                   ('T', 'b'): 'b',
                                   ('T', 'c'): 'c'})

@@ -32,7 +32,7 @@ class TokenReader: # pylint: disable=too-few-public-methods
         except StopIteration:
             return None
 
-class LLParser:
+class LLParser: # pylint: disable=too-few-public-methods
     '''
         LLParser class.
         g -> Grammar
